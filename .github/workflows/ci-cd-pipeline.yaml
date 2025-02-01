@@ -63,7 +63,6 @@ jobs:
 
     - name: Deploy manifests to Amazon EKS
       run: |
-        # Verifica se a conexão com o cluster está ativa
         kubectl cluster-info
-        # Aplica os manifests ignorando validações locais
-        kubectl apply -f k8s/ --validate=false
+        envsubst < k8s/deployment.yaml > k8s/deployment-temp.yaml
+        kubectl apply -f k8s/deployment-temp.yaml --validate=false
