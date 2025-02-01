@@ -17,5 +17,3 @@ spec:
           image: 061039791229.dkr.ecr.us-east-1.amazonaws.com/pocs/ci-cd-go:latest
           ports:
             - containerPort: 8080
-      imagePullSecrets:
-      - ecr-secret
