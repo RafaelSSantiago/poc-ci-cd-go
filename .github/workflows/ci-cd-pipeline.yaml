@@ -52,3 +52,11 @@ jobs:
       run: |
         docker tag golang-app:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/pocs/ci-cd-go:latest
         docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/pocs/ci-cd-go:latest
+    
+    - name: Set up kubectl
+      run: |
+        echo "${KUBE_CONFIG_DATA}" > $HOME/.kube/config
+
+    - name: Deploy manifests to Amazon EKS
+      run: |
+        kubectl apply -f k8s/
