@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   build:
@@ -15,69 +15,40 @@ jobs:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
+    - name: Check out code
+      uses: actions/checkout@v2
 
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: "1.20"
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: "1.20"
 
-      - name: Install dependencies
-        run: |
-          go mod tidy
+    - name: Install dependencies
+      run: |
+        go mod tidy
 
-      - name: Run tests
-        run: |
-          go test ./...
+    - name: Run tests
+      run: |
+        go test ./...
 
-      - name: Build the Docker image
-        run: |
-          docker build -t golang-app .
+    - name: Build the Docker image
+      run: |
+        docker build -t golang-app .
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: Push Docker image to Amazon ECR
-        run: |
-          docker tag golang-app:latest ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/my-repository:latest
-          docker push ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/my-repository:latest
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        mask-password: 'false'
 
-  deploy:
-    needs: build
-    name: Deploy to cluster
-    runs-on: ubuntu-latest
-    env:
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-    
-    steps:
-      - uses: actions/checkout@master
-      
-      - name: Replace environment variables
-        run: |
-          envsubst < k8s/deployment.yaml > k8s/deployment_replaced.yaml
-          mv k8s/deployment_replaced.yaml k8s/deployment.yaml
-      
-      - name: deploy to cluster
-        uses: qazz92/kubectl@1.0.3
-        env:
-          kube_confg_data: ${{ secrets.KUBE_CONFIG_DATA }}
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
-        with:
-          args: apply -f k8s/
-
-      - name: verify deployment
-        uses: qazz92/kubectl@1.0.3
-        env:
-          kube_confg_data: ${{ secrets.KUBE_CONFIG_DATA }}
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
-        with:
-          args: rollout status deployment/my-app
+    - name: Push Docker image to Amazon ECR
+      run: |
+        docker tag golang-app:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/my-repository:latest
+        docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/my-repository:latest
