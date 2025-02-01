@@ -51,4 +51,4 @@ jobs:
     - name: Push Docker image to Amazon ECR
       run: |
         docker tag golang-app:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/pocs/ci-cd-go:latest
-        docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/my-repository:latest
+        docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/pocs/ci-cd-go:latest
